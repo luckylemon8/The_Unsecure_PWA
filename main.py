@@ -4,6 +4,10 @@ from flask import request
 from flask import redirect
 from flask_cors import CORS
 import user_management as dbHandler
+from flask_sslify import SSLify
+
+app = Flask(__name__)
+sslify = SSLify(app)
 
 # Code snippet for logging a message
 # app.logger.critical("message")
