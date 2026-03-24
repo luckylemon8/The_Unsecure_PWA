@@ -17,6 +17,24 @@ app = Flask(__name__)
 CORS(app)
 
 
+def strip_tags(text):
+    if not text:
+        return ""
+
+    result = []
+    inside_tag = False
+
+    for i in text:
+        if i == "<":
+            inside_tag == True
+        elif i == ">":
+            inside_tag == False
+        elif not inside_tag:
+            result.append(i)
+
+    return "".join(result)
+
+
 @app.route("/success.html", methods=["POST", "GET", "PUT", "PATCH", "DELETE"])
 def addFeedback():
     if request.method == "GET" and request.args.get("url"):
@@ -24,6 +42,7 @@ def addFeedback():
         return redirect(url, code=302)
     if request.method == "POST":
         feedback = request.form["feedback"]
+        feedback = strip_tags(feedback)
         dbHandler.insertFeedback(feedback)
         dbHandler.listFeedback()
         return render_template("/success.html", state=True, value="Back")
