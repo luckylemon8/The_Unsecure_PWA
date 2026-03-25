@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, session
 from flask import render_template
 from flask import request
 from flask import redirect
@@ -8,11 +8,11 @@ from flask_sslify import SSLify
 
 app = Flask(__name__)
 sslify = SSLify(app)
+app.secret_key = "Uns.PWA"
 
 # Code snippet for logging a message
 # app.logger.critical("message")
 
-app = Flask(__name__)
 # Enable CORS to allow cross-origin requests (needed for CSRF demo in Codespaces)
 CORS(app)
 
@@ -37,6 +37,8 @@ def strip_tags(text):
 
 @app.route("/success.html", methods=["POST", "GET", "PUT", "PATCH", "DELETE"])
 def addFeedback():
+    if session.get("username") == None:
+        return redirect("/")
     if request.method == "GET" and request.args.get("url"):
         url = request.args.get("url", "")
         return redirect(url, code=302)
@@ -80,6 +82,14 @@ def home():
     elif request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
+
+        user = dbHandler.retrieveUsers(username, password)
+        if user:
+            session["username"] = username
+            return redirect("/success.html")
+
+        return render_template("/index.html")
+
         isLoggedIn = dbHandler.retrieveUsers(username, password)
         if isLoggedIn:
             dbHandler.listFeedback()
@@ -88,6 +98,12 @@ def home():
             return render_template("/index.html")
     else:
         return render_template("/index.html")
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/")
 
 
 if __name__ == "__main__":

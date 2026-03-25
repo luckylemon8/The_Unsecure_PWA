@@ -1,14 +1,16 @@
 import sqlite3 as sql
 import time
 import random
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 def insertUser(username, password, DoB):
     con = sql.connect("database_files/database.db")
     cur = con.cursor()
+    hashed_password = generate_password_hash(password)
     cur.execute(
         "INSERT INTO users (username,password,dateOfBirth) VALUES (?,?,?)",
-        (username, password, DoB),
+        (username, hashed_password, DoB),
     )
     con.commit()
     con.close()
@@ -16,27 +18,27 @@ def insertUser(username, password, DoB):
 
 def retrieveUsers(username, password):
     con = sql.connect("database_files/database.db")
-    cur = con.cursor()
-    cur.execute("SELECT * FROM users WHERE username = ?", (username,))
-    if cur.fetchone() == None:
+    con.row_factory = sql.Row
+    user = con.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+    if user == None:
         con.close()
-        return False
+        print("no username match")
+        return None
     else:
-        cur.execute("SELECT * FROM users WHERE password = ?", (password,))
-        # Plain text log of visitor count as requested by Unsecure PWA management
-        with open("visitor_log.txt", "r") as file:
-            number = int(file.read().strip())
-            number += 1
-        with open("visitor_log.txt", "w") as file:
-            file.write(str(number))
-        # Simulate response time of heavy app for testing purposes
-        time.sleep(random.randint(80, 90) / 1000)
-        if cur.fetchone() == None:
+        if check_password_hash(user["password"], password):
+
+            # Plain text log of visitor count as requested by Unsecure PWA management
+            with open("visitor_log.txt", "r") as file:
+                number = int(file.read().strip())
+                number += 1
+            with open("visitor_log.txt", "w") as file:
+                file.write(str(number))
+            print("login ok")
             con.close()
-            return False
+            return user
         else:
-            con.close()
-            return True
+            print("password fail")
+            return None
 
 
 def insertFeedback(feedback):
